@@ -1,15 +1,3 @@
-/*
- * CCP020 - Reprodutor de Musicas - ARDUINO MEGA 2560
- * VERSAO SEM BIBLIOTECA EXTERNA (so usa Wire, que ja vem no Arduino IDE)
- *
- * Placa: Ferramentas > Placa > Arduino Mega or Mega 2560
- *
- * Ligacoes:
- *  LCD I2C : GND->GND | VCC->5V | SDA->pino 20 | SCL->pino 21
- *  Botoes  : UP=2, DOWN=3, PLAY/PAUSE=4, STOP=5 (outra perna no GND)
- *  LEDs    : verde=6, vermelho=7 (resistor 330 ohms, catodo no GND)
- *  Buzzer  : pino 8 (outro terminal no GND)
- */
 
 #include <Wire.h>
 #include <avr/pgmspace.h>
