@@ -1,3 +1,15 @@
+/*
+ * CCP020 - Reprodutor de Musicas - ARDUINO MEGA 2560
+ * Sem biblioteca externa (so usa Wire)
+ *
+ * Placa: Ferramentas > Placa > Arduino Mega or Mega 2560
+ *
+ * Ligacoes:
+ *  LCD I2C : GND->GND | VCC->5V | SDA->pino 20 | SCL->pino 21
+ *  Botoes  : UP=2, DOWN=3, PLAY/PAUSE=4, STOP=5 (outra perna no GND)
+ *  LEDs    : verde=6, vermelho=7 (resistor 330 ohms, catodo no GND)
+ *  Buzzer  : pino 8 (outro terminal no GND)
+ */
 
 #include <Wire.h>
 #include <avr/pgmspace.h>
@@ -15,9 +27,10 @@
 
 // =====================================================
 //  DRIVER MINIMO PARA LCD 16x2 COM MODULO I2C (PCF8574)
-//  Mapeamento padrao: P0=RS P1=RW P2=EN P3=Backlight P4..P7=D4..D7
+//  P0=RS P1=RW P2=EN P3=Backlight P4..P7=D4..D7
 // =====================================================
 uint8_t lcdAddr = 0x27;
+bool lcdOk = false;
 #define LCD_BL 0x08
 #define LCD_EN 0x04
 #define LCD_RS 0x01
@@ -65,6 +78,7 @@ void lcdInit() {
 }
 
 void lcdLinha(uint8_t linha, const char* texto) {
+  if (!lcdOk) return;   // sem LCD, ignora
   lcdCmd(0x80 | (linha == 0 ? 0x00 : 0x40));
   uint8_t i = 0;
   while (texto[i] != '\0' && i < 16) {
@@ -297,7 +311,7 @@ void setup() {
   pinMode(LED_VERMELHO, OUTPUT);
   pinMode(BUZZER, OUTPUT);
 
-  // Teste rapido: beep + LED verde + LED vermelho (prova que o sketch rodou)
+  // Teste rapido: beep + LED verde + LED vermelho
   digitalWrite(LED_VERDE, HIGH);
   tone(BUZZER, 1000, 150);
   delay(300);
@@ -310,25 +324,27 @@ void setup() {
   uint8_t endereco = acharLCD();
 
   if (endereco == 0) {
-    Serial.println("ERRO: nenhum dispositivo I2C. Confira SDA=20, SCL=21, VCC=5V, GND.");
-    while (true) {   // LEDs alternando = LCD nao encontrado
+    // Sem LCD: avisa piscando os dois LEDs 3 vezes e segue normalmente
+    Serial.println("ERRO: LCD I2C nao encontrado. Seguindo sem display.");
+    for (int i = 0; i < 3; i++) {
       digitalWrite(LED_VERDE, HIGH);
-      digitalWrite(LED_VERMELHO, LOW);
-      delay(300);
-      digitalWrite(LED_VERDE, LOW);
       digitalWrite(LED_VERMELHO, HIGH);
-      delay(300);
+      delay(150);
+      digitalWrite(LED_VERDE, LOW);
+      digitalWrite(LED_VERMELHO, LOW);
+      delay(150);
     }
+  } else {
+    lcdAddr = endereco;
+    lcdOk = true;
+    Serial.print("LCD I2C encontrado em 0x");
+    Serial.println(lcdAddr, HEX);
+    lcdInit();
+    lcdLinha(0, "REPRODUTOR");
+    lcdLinha(1, "DE MUSICAS");
+    delay(1500);
   }
 
-  lcdAddr = endereco;
-  Serial.print("LCD I2C encontrado em 0x");
-  Serial.println(lcdAddr, HEX);
-
-  lcdInit();
-  lcdLinha(0, "REPRODUTOR");
-  lcdLinha(1, "DE MUSICAS");
-  delay(1500);
   mostrarMenu();
 }
 
